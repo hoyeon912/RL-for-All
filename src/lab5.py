@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 env = gym.make('FrozenLake-v1') # Default is_slipperyy attribute setting is True
 Q = np.zeros([env.observation_space.n, env.action_space.n])
 
-learning_rate = 0.85
+learning_rate = 0.67
 dis = 0.99
 num_episodes = 2000
 
@@ -29,9 +29,18 @@ print('Q')
 plt.bar(range(len(rList)), rList, color='blue')
 plt.show()
 
-# Score Lap
-# 1. 0.3725
-# 2. 0.511
-# 3. 0.4555
-# 4. 0.371
-# 5. 0.5395
+# Score Lap (Learning rate = 0.85) Avg. = 0.4499
+# 1) 0.3725
+# 2) 0.511
+# 3) 0.4555
+# 4) 0.371
+# 5) 0.5395
+
+# Score Lap (Learning rate = 0.67) Avg. = 0.4313
+# 1) 0.55
+# 2) 0.3825
+# 3) 0.4555
+# 4) 0.4275
+# 5) 0.341
+
+# Result = Not diff. with learning rate.
