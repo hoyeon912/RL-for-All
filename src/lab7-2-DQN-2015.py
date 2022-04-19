@@ -1,5 +1,5 @@
 from collections import deque
-import random
+import random, time
 import gym
 import numpy as np
 from keras import Sequential
@@ -104,6 +104,7 @@ def main():
         step_count =  0
         avg_step = 0
         state = env.reset()
+        start = time.time()
         while not done:
             if np.random.rand(1) < e:
                 action = env.sample()
@@ -113,7 +114,8 @@ def main():
             rm.append((state, action, reward, next_state, done))
             state = next_state
             step_count += 1
-        print(f'Episode: {episode}\tsteps: {step_count}')
+        end = time.time()
+        print(f'Episode: {episode}\tsteps: {step_count}\truntime: {end-start:.2f}s')
         avg_step += step_count
         if avg_step > 475:
             break

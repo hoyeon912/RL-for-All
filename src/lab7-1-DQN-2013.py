@@ -94,6 +94,7 @@ def main():
     step_count = 0
     avg_step = 0
     for episode in range(env.num_episodes):
+        start = time.time()
         e = 1. / ((episode/10) + 1)
         done = False
         state = env.reset()
@@ -106,7 +107,8 @@ def main():
             rm.append((state, action, reward, next_state, done))
             state = next_state
             step_count += 1
-        print(f'Episode: {episode}\tsteps: {step_count}')
+        end = time.time()
+        print(f'Episode: {episode}\tsteps: {step_count}\truntime: {end-start:.2f}s')
         avg_step += step_count
         if avg_step > 475:
             break
