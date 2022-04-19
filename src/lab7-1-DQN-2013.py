@@ -30,9 +30,10 @@ class DQN:
     
 
 class ReplayMemory:
-    def __init__(self, buffer_size):
+    def __init__(self, buffer_size, dis):
         self.buffer_size = buffer_size
         self.buffer = deque()
+        self.dis = 0.9
 
     def append(self, data):
         self.buffer.append(data)
@@ -44,7 +45,11 @@ class ReplayMemory:
         y_stack = np.empty(0).reshape(0, network.output_size)
         for _ in range(50):
             batch = random.sample(self.buffer, 10)
-            for state, q in batch:
+            for state, action, q, next_state, reward, done in batch:
+                if done:
+                    q[0, action] = reward
+                else:
+                    q[0, action] = reward + self.dis * np.max(network.predict(next_state))
                 y_stack = np.vstack([y_stack, q])
                 x_stack = np.vstack([x_stack, state])
         return network.fit(x_stack, y_stack)
@@ -82,11 +87,11 @@ def bot_play(network, env):
 
 def main():
     env = Env('CartPole-v1', 5000)
-    rm = ReplayMemory(50000)
+    rm = ReplayMemory(50000, 0.9)
     network = DQN(env.get_input_size(), env.get_output_size())
     network.build()
-    dis = 0.9
     avg_step = 0
+    sum_step = 0
     for episode in range(env.num_episodes):
         start = time.time()
         step_count = 0
@@ -100,21 +105,22 @@ def main():
             else:
                 action = np.argmax(q)
             next_state, reward, done, _ = env.step(action)
-            if done:
-                q[0, action] = reward
-            else:
-                q[0, action] = reward + dis * np.max(network.predict(next_state))
-            rm.append((state, q))
+            rm.append((state, action, q, next_state, reward, done))
             state = next_state
             step_count += 1
-        end = time.time()
-        print(f'Episode: {episode}\tsteps: {step_count}\truntime: {end-start:.2f}s')
+        # end = time.time()
+        # print(f'Episode: {episode}\tsteps: {step_count}\truntime: {end-start:.2f}s')
         avg_step += step_count
+        sum_step += step_count
         if avg_step/10 > 475:
                 break
         if (episode + 1) % 10 == 0:
+            end = time.time()
+            print(f'Episode: {episode-9}-{episode}\truntime/step: {(end-start)/sum_step}')
             rm.replay_train(network)
             avg_step = 0
+            sum_step = 0
+            start = time.time()
     bot_play(network, env)
 
 if __name__ == '__main__':
