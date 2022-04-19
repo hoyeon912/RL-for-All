@@ -30,10 +30,9 @@ class DQN:
     
 
 class ReplayMemory:
-    def __init__(self, buffer_size, dis):
+    def __init__(self, buffer_size):
         self.buffer_size = buffer_size
         self.buffer = deque()
-        self.dis = dis
 
     def append(self, data):
         self.buffer.append(data)
@@ -45,12 +44,7 @@ class ReplayMemory:
         y_stack = np.empty(0).reshape(0, network.output_size)
         for _ in range(50):
             batch = random.sample(self.buffer, 10)
-            for state, action, reward, next_state, done in batch:
-                q = network.predict(state)
-                if done:
-                    q[0, action] = reward
-                else:
-                    q[0, action] = reward + self.dis * np.max(network.predict(next_state))
+            for state, q in batch:
                 y_stack = np.vstack([y_stack, q])
                 x_stack = np.vstack([x_stack, state])
         return network.fit(x_stack, y_stack)
@@ -75,11 +69,11 @@ class Env:
     def sample(self):
         return self.env.action_space.sample()
 
-def bot_play(q, env):
+def bot_play(network, env):
     state = env.reset()
     reward_sum = 0
     while True:
-        action = np.argmax(q.predict(state))
+        action = np.argmax(network.predict(state))
         state, reward, done, _ = env.step(action)
         reward_sum += reward
         if done:
@@ -88,34 +82,40 @@ def bot_play(q, env):
 
 def main():
     env = Env('CartPole-v1', 5000)
-    rm = ReplayMemory(50000, 0.9)
-    q = DQN(env.get_input_size(), env.get_output_size())
-    q.build()
-    step_count = 0
+    rm = ReplayMemory(50000)
+    network = DQN(env.get_input_size(), env.get_output_size())
+    network.build()
+    dis = 0.9
     avg_step = 0
     for episode in range(env.num_episodes):
         start = time.time()
+        step_count = 0
         e = 1. / ((episode/10) + 1)
         done = False
         state = env.reset()
         while not done:
+            q = network.predict(state)
             if np.random.rand(1) < e:
                 action = env.sample()
             else:
-                action = np.argmax(q.predict(state))
+                action = np.argmax(q)
             next_state, reward, done, _ = env.step(action)
-            rm.append((state, action, reward, next_state, done))
+            if done:
+                q[0, action] = reward
+            else:
+                q[0, action] = reward + dis * np.max(network.predict(next_state))
+            rm.append((state, q))
             state = next_state
             step_count += 1
         end = time.time()
         print(f'Episode: {episode}\tsteps: {step_count}\truntime: {end-start:.2f}s')
         avg_step += step_count
-        if avg_step > 475:
-            break
+        if avg_step/10 > 475:
+                break
         if (episode + 1) % 10 == 0:
-            rm.replay_train(q)
+            rm.replay_train(network)
             avg_step = 0
-    bot_play(q, env)
+    bot_play(network, env)
 
 if __name__ == '__main__':
     main()

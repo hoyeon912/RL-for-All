@@ -117,7 +117,7 @@ def main():
         end = time.time()
         print(f'Episode: {episode}\tsteps: {step_count}\truntime: {end-start:.2f}s')
         avg_step += step_count
-        if avg_step > 475:
+        if avg_step/10 > 475:
             break
         if (episode + 1) % 10 == 0:
             rm.replay_train(q, t)
