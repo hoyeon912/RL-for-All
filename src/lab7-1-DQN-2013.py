@@ -92,7 +92,7 @@ def main():
     q = DQN(env.get_input_size(), env.get_output_size())
     q.build()
     step_count = 0
-    start = time.time()
+    avg_step = 0
     for episode in range(env.num_episodes):
         e = 1. / ((episode/10) + 1)
         done = False
@@ -106,14 +106,13 @@ def main():
             rm.append((state, action, reward, next_state, done))
             state = next_state
             step_count += 1
-            if step_count > 10000:
-                break
+        print(f'Episode: {episode}\tsteps: {step_count}')
+        avg_step += step_count
+        if avg_step > 475:
+            break
         if (episode + 1) % 10 == 0:
-            end = time.time()
-            print(f'Episode: {episode-9}-{episode}\tavg_steps: {step_count/10}\tavg_times: {(end-start)/10}')
             rm.replay_train(q)
-            step_count = 0
-            start = time.time()
+            avg_step = 0
     bot_play(q, env)
 
 if __name__ == '__main__':

@@ -102,6 +102,7 @@ def main():
         e = 1. / ((episode/10) + 1)
         done = False
         step_count =  0
+        avg_step = 0
         state = env.reset()
         while not done:
             if np.random.rand(1) < e:
@@ -112,12 +113,14 @@ def main():
             rm.append((state, action, reward, next_state, done))
             state = next_state
             step_count += 1
-            if step_count > 10000:
-                break
         print(f'Episode: {episode}\tsteps: {step_count}')
+        avg_step += step_count
+        if avg_step > 475:
+            break
         if (episode + 1) % 10 == 0:
             rm.replay_train(q, t)
             t.set_weights(q.get_weights())
+            avg_step = 0
     bot_play(q, env)
 
 if __name__ == '__main__':
