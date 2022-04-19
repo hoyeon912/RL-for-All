@@ -91,7 +91,6 @@ def main():
     network = DQN(env.get_input_size(), env.get_output_size())
     network.build()
     avg_step = 0
-    sum_step = 0
     for episode in range(env.num_episodes):
         start = time.time()
         step_count = 0
@@ -108,18 +107,14 @@ def main():
             rm.append((state, action, q, next_state, reward, done))
             state = next_state
             step_count += 1
-        # end = time.time()
-        # print(f'Episode: {episode}\tsteps: {step_count}\truntime: {end-start:.2f}s')
+        end = time.time()
+        print(f'Episode: {episode}\tsteps: {step_count}\truntime: {end-start:.2f}s')
         avg_step += step_count
-        sum_step += step_count
         if avg_step/10 > 475:
                 break
         if (episode + 1) % 10 == 0:
-            end = time.time()
-            print(f'Episode: {episode-9}-{episode}\truntime/step: {(end-start)/sum_step}')
             rm.replay_train(network)
             avg_step = 0
-            sum_step = 0
             start = time.time()
     bot_play(network, env)
 

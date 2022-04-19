@@ -44,17 +44,16 @@ class ReplayMemory:
         if len(self.buffer) > self.buffer_size:
             self.buffer.popleft()
 
-    def replay_train(self, network, target):
+    def replay_train(self, network):
         x_stack = np.empty(0).reshape(0, network.input_size)
         y_stack = np.empty(0).reshape(0, network.output_size)
         for _ in range(50):
             batch = random.sample(self.buffer, 10)
-            for state, action, reward, next_state, done in batch:
-                q = network.predict(state)
+            for state, action, q, next_state, reward, done in batch:
                 if done:
                     q[0, action] = reward
                 else:
-                    q[0, action] = reward + self.dis * np.max(target.predict(next_state))
+                    q[0, action] = reward + self.dis * np.max(network.predict(next_state))
                 y_stack = np.vstack([y_stack, q])
                 x_stack = np.vstack([x_stack, state])
         return network.fit(x_stack, y_stack)
@@ -93,25 +92,26 @@ def bot_play(q, env):
 def main():
     env = Env('CartPole-v1', 5000)
     rm = ReplayMemory(50000, 0.9)
-    q = DQN(env.get_input_size(), env.get_output_size())
-    t = DQN(env.get_input_size(), env.get_output_size())
-    q.build()
-    t.build()
-    t.set_weights(q.get_weights())
+    network = DQN(env.get_input_size(), env.get_output_size())
+    target = DQN(env.get_input_size(), env.get_output_size())
+    network.build()
+    target.build()
+    target.set_weights(network.get_weights())
+    avg_step = 0
     for episode in range(env.num_episodes):
         e = 1. / ((episode/10) + 1)
         done = False
         step_count =  0
-        avg_step = 0
         state = env.reset()
         start = time.time()
         while not done:
+            q = network.predict(state)
             if np.random.rand(1) < e:
                 action = env.sample()
             else:
-                action = np.argmax(q.predict(state))
+                action = np.argmax(q)
             next_state, reward, done, _ = env.step(action)
-            rm.append((state, action, reward, next_state, done))
+            rm.append((state, action, q, next_state, reward, done))
             state = next_state
             step_count += 1
         end = time.time()
@@ -120,10 +120,10 @@ def main():
         if avg_step/10 > 475:
             break
         if (episode + 1) % 10 == 0:
-            rm.replay_train(q, t)
-            t.set_weights(q.get_weights())
+            rm.replay_train(target)
+            target.set_weights(network.get_weights())
             avg_step = 0
-    bot_play(q, env)
+    bot_play(network, env)
 
 if __name__ == '__main__':
     main()
