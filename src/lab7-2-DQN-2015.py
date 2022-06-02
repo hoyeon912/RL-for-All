@@ -22,10 +22,10 @@ class DQN:
     
     def predict(self, state):
         x = np.reshape(state, [1, self.input_size])
-        return self.model.predict(x)
+        return self.model.predict(x, verbose=False)
     
     def fit(self, x, y):
-        return self.model.fit(x, y, batch_size=10)
+        return self.model.fit(x, y, batch_size=10, verbose=True)
     
     def set_weights(self, weights):
         return self.model.set_weights(weights)

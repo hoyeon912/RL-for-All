@@ -23,17 +23,17 @@ class DQN:
     
     def predict(self, state):
         x = np.reshape(state, [1, self.input_size])
-        return self.model.predict(x)
+        return self.model.predict(x, verbose=False)
     
     def fit(self, x, y):
-        return self.model.fit(x, y, batch_size=10)
+        return self.model.fit(x, y, batch_size=10, verbsoe=True)
     
 
 class ReplayMemory:
-    def __init__(self, buffer_size, dis):
+    def __init__(self, buffer_size, dis=0.9):
         self.buffer_size = buffer_size
         self.buffer = deque()
-        self.dis = 0.9
+        self.dis = dis
 
     def append(self, data):
         self.buffer.append(data)
